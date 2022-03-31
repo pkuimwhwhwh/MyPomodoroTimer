@@ -9,10 +9,10 @@ Description: Tool for time recording and other automation tasks.
 Version: 1.0
 '''
 
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction
+from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QIcon
-import sys, playsound, os
+import sys, os, time
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,6 +23,7 @@ class Tomato(QWidget):
         self.work = 25  # 番茄钟时间25分钟
         self.second_remain = self.work * 60
         self.round = 0
+        self.currentStartTime=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()) 
         self.rest = 5  # 休息时间5分钟
         self.round_rest = 30  # 1轮4个番茄钟休息30分钟
         self.current_status = "Work"
@@ -72,9 +73,11 @@ class Tomato(QWidget):
 
         hbox = QHBoxLayout()
         hbox2=QHBoxLayout()
+        hbox3=QHBoxLayout()
         vbox.addLayout(hbox)
         vbox.addLayout(hbox2)
-
+        vbox.addLayout(hbox3)
+        
         # 功能按钮
         self.startButton = QPushButton("开始")
         self.startButton.clicked.connect(self.start)
@@ -89,7 +92,8 @@ class Tomato(QWidget):
         self.pauseButton.setEnabled(False)
         self.pauseButton.clicked.connect(self.pause)
         hbox.addWidget(self.pauseButton)
-
+        
+        # 时间调整按钮
         self.plusButton= QPushButton("+")
         self.plusButton.setEnabled(True)
         self.plusButton.clicked.connect(lambda:self.add(1))
@@ -110,8 +114,13 @@ class Tomato(QWidget):
         self.ssubButton.clicked.connect(lambda:self.add(-2))
         hbox2.addWidget(self.ssubButton)
 
+        #任务选择栏
+        self.taskCb = QComboBox(self)
+        #添加条目
+        self.taskCb.addItem('工作')
+        self.taskCb.addItem('杂务')
+        hbox3.addWidget(self.taskCb)
 
-        
         self.setLayout(vbox)
         self.tray.show()
         self.show()
@@ -129,9 +138,9 @@ class Tomato(QWidget):
             self.timer.stop()
             self.clock.display("%2d:%02d" % (self.second_remain // 60, self.second_remain % 60))
             self.round += 1
+            with open(os.path.join(BASE_DIR, 'log.csv'), encoding="utf-8",mode="a") as file:
+                file.write("\n{0},{1},{2}".format(self.taskCb.currentText(),self.currentStartTime,time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())))
             if self.current_status == "Work":
-                for i in range(10):
-                    playsound.playsound(os.path.join(BASE_DIR, 'bark.ogg'))
                 self.pe.setColor(QPalette.Window, Qt.darkGreen)
                 self.current_status = "Rest"
                 if self.round % 4 == 0:
@@ -139,8 +148,6 @@ class Tomato(QWidget):
                 else:
                     self.second_remain = self.rest * 60
             else:
-                for i in range(10):
-                    playsound.playsound(os.path.join(BASE_DIR, 'drip.ogg'))
                 self.pe.setColor(QPalette.Window, Qt.darkRed)
                 self.current_status = "Work"
                 self.second_remain = self.work * 60
@@ -153,6 +160,7 @@ class Tomato(QWidget):
 
     def start(self):
         # 启动定时器
+        self.currentStartTime=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()) 
         self.timer.start()
         # 设置功能按钮
         self.startButton.setEnabled(False)
@@ -162,6 +170,7 @@ class Tomato(QWidget):
         self.subButton.setEnabled(False)
         self.pplusButton.setEnabled(False)
         self.ssubButton.setEnabled(False)
+        self.taskCb.setEnabled(False)
         
     def stop(self):
         self.round = 0
@@ -175,7 +184,11 @@ class Tomato(QWidget):
         self.subButton.setEnabled(True)
         self.pplusButton.setEnabled(True)
         self.ssubButton.setEnabled(True)
+        self.taskCb.setEnabled(True)
+        with open(os.path.join(BASE_DIR, 'log.csv'), encoding="utf-8",mode="a") as file:
+            file.write("\n{0},{1},{2}".format(self.taskCb.currentText(),self.currentStartTime,time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())))
         self.timer.stop()
+        
 
     def pause(self):
         self.startButton.setEnabled(True)
