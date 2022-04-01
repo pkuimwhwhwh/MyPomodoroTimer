@@ -9,7 +9,7 @@ Description: Tool for time recording and other automation tasks.
 Version: 1.0
 '''
 
-from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction
+from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction, QCheckBox
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QIcon
 import sys, os, time
@@ -120,6 +120,10 @@ class Tomato(QWidget):
         self.taskCb.addItem('工作')
         self.taskCb.addItem('杂务')
         hbox3.addWidget(self.taskCb)
+        #模式选择
+        self.modeChk = QCheckBox("正计时")
+        self.modeChk.setChecked(True)
+        hbox3.addWidget(self.modeChk)
 
         self.setLayout(vbox)
         self.tray.show()
