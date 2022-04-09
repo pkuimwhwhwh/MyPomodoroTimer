@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 '''
-Date: 2022-03-19
+Date: 2022-04-09
 Author: Wang Hang
 Email: PKUWangHang@gmail.com
 Description: Tool for time recording and other automation tasks.
-Version: 1.0
+Version: 1.1
 '''
 
 from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction, QCheckBox
@@ -21,7 +21,7 @@ class Tomato(QWidget):
     def __init__(self):
         super().__init__()
         self.work = 25  # 番茄钟时间25分钟
-        self.second_remain = self.work * 60
+        self.second_passed = 0
         self.round = 0
         self.currentStartTime=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()) 
         self.rest = 5  # 休息时间5分钟
@@ -42,7 +42,7 @@ class Tomato(QWidget):
         self.restoreAction = QAction('显示', self, triggered=self.show)
         self.quitAction = QAction('退出', self, triggered=app.quit)
 
-        self.tipAction = QAction("%s/%d > %2d:%02d" % (self.current_status, self.round + 1, self.second_remain // 60, self.second_remain % 60), self, triggered=self.show)
+        self.tipAction = QAction("%s/%d > %2d:%02d" % (self.current_status, self.round + 1, self.second_passed // 60, self.second_passed % 60), self, triggered=self.show)
         self.tray_menu.addAction(self.tipAction)
         self.tray_menu.addAction(self.restoreAction)
         self.tray_menu.addAction(self.quitAction)
@@ -68,7 +68,7 @@ class Tomato(QWidget):
         vbox.addWidget(self.labelRound)
         # 倒计时显示器
         self.clock = QLCDNumber(self)  # 剩余时间显示组件
-        self.clock.display("%2d:%02d" % (self.work, 0))
+        self.clock.display("%02d:%02d" % (self.second_passed, 0))
         vbox.addWidget(self.clock)
 
         hbox = QHBoxLayout()
@@ -137,30 +137,11 @@ class Tomato(QWidget):
 
     def onTimer(self):
         # 工作状态
-        self.second_remain -= 1
-        if self.second_remain == 0:
-            self.timer.stop()
-            self.clock.display("%2d:%02d" % (self.second_remain // 60, self.second_remain % 60))
-            self.round += 1
-            with open(os.path.join(BASE_DIR, 'log.csv'), encoding="utf-8",mode="a") as file:
-                file.write("\n{0},{1},{2}".format(self.taskCb.currentText(),self.currentStartTime,time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())))
-            if self.current_status == "Work":
-                self.pe.setColor(QPalette.Window, Qt.darkGreen)
-                self.current_status = "Rest"
-                if self.round % 4 == 0:
-                    self.second_remain = self.round_rest * 60
-                else:
-                    self.second_remain = self.rest * 60
-            else:
-                self.pe.setColor(QPalette.Window, Qt.darkRed)
-                self.current_status = "Work"
-                self.second_remain = self.work * 60
-            self.timer.start()
-
+        self.second_passed += 1
         self.labelRound.setPalette(self.pe)
         self.labelRound.setText("Round {0}-{1}".format(self.round + 1, self.current_status))
-        self.clock.display("%2d:%02d" % (self.second_remain // 60, self.second_remain % 60))
-        self.tipAction.setText("%s/%d > %2d:%02d" % (self.current_status, self.round + 1, self.second_remain // 60, self.second_remain % 60))
+        self.clock.display("%02d:%02d" % (self.second_passed // 60, self.second_passed % 60))
+        self.tipAction.setText("%s/%d > %2d:%02d" % (self.current_status, self.round + 1, self.second_passed // 60, self.second_passed % 60))
 
     def start(self):
         # 启动定时器
@@ -178,9 +159,9 @@ class Tomato(QWidget):
         
     def stop(self):
         self.round = 0
-        self.second_remain = self.work * 60
+        self.second_passed = 0
         self.current_status = 'Work'
-        self.clock.display("%2d:%02d" % (self.work, 0))
+        self.clock.display("%02d:%02d" % (self.second_passed // 60, self.second_passed % 60))
         self.startButton.setEnabled(True)
         self.pauseButton.setEnabled(False)
         self.stopButton.setEnabled(False)
@@ -193,7 +174,6 @@ class Tomato(QWidget):
             file.write("\n{0},{1},{2}".format(self.taskCb.currentText(),self.currentStartTime,time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())))
         self.timer.stop()
         
-
     def pause(self):
         self.startButton.setEnabled(True)
         self.pauseButton.setEnabled(False)
@@ -211,8 +191,8 @@ class Tomato(QWidget):
         self.pplusButton.setEnabled(True)
         self.ssubButton.setEnabled(True)
         self.work+=interval
-        self.second_remain = self.work * 60
-        self.clock.display("%2d:%02d" % (self.work, 0))
+        self.second_passed = self.work * 60
+        self.clock.display("%02d:%02d" % (self.work, 0))
         self.timer.stop()
 
 
