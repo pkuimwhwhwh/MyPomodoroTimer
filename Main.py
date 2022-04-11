@@ -9,10 +9,12 @@ Description: Tool for time recording and other automation tasks.
 Version: 1.1
 '''
 
+from datetime import datetime
 from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction, QCheckBox
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QIcon
 import sys, os, time
+from Util import getTasks
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,10 +25,10 @@ class Tomato(QWidget):
         self.work = 25  # 番茄钟时间25分钟
         self.second_passed = 0
         self.round = 0
-        self.currentStartTime=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()) 
         self.rest = 5  # 休息时间5分钟
-        self.round_rest = 30  # 1轮4个番茄钟休息30分钟
         self.current_status = "Work"
+        self.currentStartTime:datetime
+        self.currentEndTime:datetime
         self.initUI()
 
     def initUI(self):
@@ -117,8 +119,7 @@ class Tomato(QWidget):
         #任务选择栏
         self.taskCb = QComboBox(self)
         #添加条目
-        self.taskCb.addItem('工作')
-        self.taskCb.addItem('杂务')
+        self.taskCb.addItems(getTasks())
         hbox3.addWidget(self.taskCb)
         #模式选择
         self.modeChk = QCheckBox("正计时")
@@ -145,7 +146,7 @@ class Tomato(QWidget):
 
     def start(self):
         # 启动定时器
-        self.currentStartTime=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()) 
+        self.currentStartTime=time.time()
         self.timer.start()
         # 设置功能按钮
         self.startButton.setEnabled(False)
@@ -171,7 +172,9 @@ class Tomato(QWidget):
         self.ssubButton.setEnabled(True)
         self.taskCb.setEnabled(True)
         with open(os.path.join(BASE_DIR, 'log.csv'), encoding="utf-8",mode="a") as file:
-            file.write("\n{0},{1},{2}".format(self.taskCb.currentText(),self.currentStartTime,time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())))
+            self.currentEndTime=time.time()
+            self.currentTimeSpan=self.currentEndTime-self.currentStartTime
+            file.write("\n{0},{1},{2},{3}".format(self.taskCb.currentText(),self.currentStartTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentEndTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentTimeSpan))
         self.timer.stop()
         
     def pause(self):
