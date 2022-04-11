@@ -9,12 +9,12 @@ Description: Tool for time recording and other automation tasks.
 Version: 1.1
 '''
 
-from datetime import datetime
+from datetime import date, datetime
 from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction, QCheckBox
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QIcon
-import sys, os, time
-from Util import getTasks
+import sys, os, time,datetime
+from Util import getTasks,convertSpanToHhmmss,initTotalSpan
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,6 +29,7 @@ class Tomato(QWidget):
         self.current_status = "Work"
         self.currentStartTime:datetime
         self.currentEndTime:datetime
+        self.totalSpan:datetime.timedelta=initTotalSpan()
         self.initUI()
 
     def initUI(self):
@@ -57,7 +58,7 @@ class Tomato(QWidget):
         vbox = QVBoxLayout()
         # 提示标签
         self.labelRound = QLabel(self)  # 提示标签
-        self.labelRound.setText("准备开始番茄钟")
+        self.labelRound.setText("今日累计: {0}".format(convertSpanToHhmmss(self.totalSpan)))
         self.labelRound.setFixedHeight(50)
         self.labelRound.setAlignment(Qt.AlignCenter)
         self.pe = QPalette()
@@ -139,14 +140,15 @@ class Tomato(QWidget):
     def onTimer(self):
         # 工作状态
         self.second_passed += 1
+        self.totalSpan=self.totalSpan+datetime.timedelta(seconds=1)
         self.labelRound.setPalette(self.pe)
-        self.labelRound.setText("Round {0}-{1}".format(self.round + 1, self.current_status))
+        self.labelRound.setText("今日累计: {0}".format(convertSpanToHhmmss(self.totalSpan)))
         self.clock.display("%02d:%02d" % (self.second_passed // 60, self.second_passed % 60))
         self.tipAction.setText("%s/%d > %2d:%02d" % (self.current_status, self.round + 1, self.second_passed // 60, self.second_passed % 60))
 
     def start(self):
         # 启动定时器
-        self.currentStartTime=time.time()
+        self.currentStartTime=datetime.datetime.now()
         self.timer.start()
         # 设置功能按钮
         self.startButton.setEnabled(False)
@@ -172,9 +174,9 @@ class Tomato(QWidget):
         self.ssubButton.setEnabled(True)
         self.taskCb.setEnabled(True)
         with open(os.path.join(BASE_DIR, 'log.csv'), encoding="utf-8",mode="a") as file:
-            self.currentEndTime=time.time()
+            self.currentEndTime=datetime.datetime.now()
             self.currentTimeSpan=self.currentEndTime-self.currentStartTime
-            file.write("\n{0},{1},{2},{3}".format(self.taskCb.currentText(),self.currentStartTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentEndTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentTimeSpan))
+            file.write("\n{0},{1},{2},{3}".format(self.taskCb.currentText(),self.currentStartTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentEndTime.strftime('%Y/%m/%d %H:%M:%S'),self.currentTimeSpan.total_seconds()))
         self.timer.stop()
         
     def pause(self):
