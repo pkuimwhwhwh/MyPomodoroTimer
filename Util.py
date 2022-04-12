@@ -14,7 +14,7 @@ def initTotalSpan() -> timedelta:
 
 def convertSpanToHhmmss(td:timedelta) -> str:
 	res:str=""
-	res="%02d:%02d:%02d" % (td.total_seconds() // 3600, td.total_seconds() //60,td.total_seconds()%60)
+	res="%02d:%02d:%02d" % (td.total_seconds() // 3600, (td.total_seconds() //60)%60,td.total_seconds()%60)
 	return res
 
 def addTimeRecord():
