@@ -13,7 +13,7 @@ from datetime import date, datetime
 from PyQt5.QtWidgets import  QComboBox,QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLCDNumber, QSystemTrayIcon, QMenu, QAction, QCheckBox
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QIcon
-import sys, os, time,datetime
+import sys, os, winsound,datetime
 from Util import getTasks,convertSpanToHhmmss,initTotalSpan
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -140,6 +140,10 @@ class Tomato(QWidget):
     def onTimer(self):
         # 工作状态
         self.second_passed += 1
+        if self.second_passed%1500 ==0:
+            winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+            winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+            winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
         self.totalSpan=self.totalSpan+datetime.timedelta(seconds=1)
         self.labelRound.setPalette(self.pe)
         self.labelRound.setText("今日累计: {0}".format(convertSpanToHhmmss(self.totalSpan)))
